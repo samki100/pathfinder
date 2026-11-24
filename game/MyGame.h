@@ -15,6 +15,7 @@ class CMyGame : public CGame
 	CSprite m_pumpkin;				// Pumpkin
 	CSpriteList m_tiles;			// Tiles
 	CSpriteList m_nodes;			// Nodes
+	CSprite m_background;
 	static char* m_tileLayout[12];	// Tiles layout
 
 	list<CVector> m_waypoints;

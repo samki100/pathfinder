@@ -73,7 +73,8 @@ char* CMyGame::m_tileLayout[12] =
 
 CMyGame::CMyGame(void) :
 	m_npc(544, 96, 64, 64, 0),
-	m_pumpkin(-100, -100, "Pumpkin22.png", CColor::White(), 0)
+	m_pumpkin(-100, -100, "Pumpkin22.png", CColor::White(), 0),
+	m_background(640, 384, "Area51Background.png", CColor::White(), 0)
 {
 	m_npc.LoadAnimation("Spider64.png", "walk", CSprite::Sheet(4, 2).Col(0).From(0).To(1));
 	m_npc.LoadAnimation("Spider64.png", "idle", CSprite::Sheet(4, 2).Col(2).From(0).To(1));
@@ -145,10 +146,12 @@ void CMyGame::OnDraw(CGraphics* g)
 	for (NODE n : m_graph)
 		for (CONNECTION c : n.conlist)
 			g->DrawLine(n.pos, m_graph[c.nEnd].pos, CColor::Black());
-	m_nodes.for_each(&CSprite::Draw, g);
+	m_background.Draw(g);
+	
 	m_tiles.for_each(&CSprite::Draw, g);
 	m_pumpkin.Draw(g);
 	m_npc.Draw(g);
+	
 }
 
 /////////////////////////////////////////////////////
