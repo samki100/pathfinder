@@ -27,6 +27,7 @@ class CMyGame : public CGame
 	bool m_left = false;
 	bool m_right = false;
 
+	int m_currentAnimation = -1;
 
 public:
 	CMyGame(void);
