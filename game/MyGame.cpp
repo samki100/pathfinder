@@ -76,6 +76,11 @@ CMyGame::CMyGame(void) :
 	m_pumpkin(-100, -100, "Pumpkin22.png", CColor::White(), 0),
 	m_background(640, 384, "Area51Background.png", CColor::White(), 0)
 {
+	m_up = false;
+	m_down = false;
+	m_left = false;
+	m_right = false;
+
 	m_npc.LoadAnimation("Spider64.png", "walk", CSprite::Sheet(4, 2).Col(0).From(0).To(1));
 	m_npc.LoadAnimation("Spider64.png", "idle", CSprite::Sheet(4, 2).Col(2).From(0).To(1));
 	m_npc.SetAnimation("idle", 4);
@@ -112,30 +117,32 @@ void CMyGame::OnUpdate()
 {
 	Uint32 t = GetTime();
 
+	float dx = 0;
+	float dy = 0;
 
-	// NPC: follow the waypoints
-	if (!m_waypoints.empty())
+	if (m_up) dy += 1;
+	if (m_down) dy -= 1;
+	if (m_left) dx -= 1;
+	if (m_right) dx += 1;
+
+	if (dx != 0 && dy != 0)
 	{
-		// If NPC not moving, start moving to the first waypoint
-		if (m_npc.GetSpeed() < 1)
-		{
-			m_npc.SetSpeed(500);
-			m_npc.SetAnimation("walk");
-			m_npc.SetDirection(m_waypoints.front() - m_npc.GetPosition());
-			m_npc.SetRotation(m_npc.GetDirection() - 90);
-		}
+		dx *= 0.7071f;
+		dy *= 0.7071f;
+	}
 
-		// Passed the waypoint?
-		CVector v = m_waypoints.front() - m_npc.GetPosition();
-		if (Dot(m_npc.GetVelocity(), v) < 0)
-		{
-			// Stop movement
-			m_waypoints.pop_front();
-			if (m_waypoints.empty())
-				m_npc.SetAnimation("idle");
-			m_npc.SetVelocity(0, 0);
-			m_npc.SetRotation(0);
-		}
+	m_npc.SetVelocity(dx * 200, dy * 200);
+
+	if (dx != 0 || dy != 0)
+	{
+		m_npc.SetAnimation("walk");
+		m_npc.SetDirection(CVector(dx, dy));
+		m_npc.SetRotation(m_npc.GetDirection() - 90);
+	}
+	else
+	{
+		m_npc.SetAnimation("idle");
+		m_npc.SetRotation(0);
 	}
 	
 	m_npc.Update(t);
@@ -232,10 +239,20 @@ void CMyGame::OnKeyDown(SDLKey sym, SDLMod mod, Uint16 unicode)
 		PauseGame();
 	if (sym == SDLK_F2)
 		NewGame();
+
+	if (sym == SDLK_UP) m_up = true;
+	if (sym == SDLK_DOWN) m_down = true;
+	if (sym == SDLK_LEFT) m_left = true; 
+	if (sym == SDLK_RIGHT) m_right = true;
+	
 }
 
 void CMyGame::OnKeyUp(SDLKey sym, SDLMod mod, Uint16 unicode)
 {
+	if (sym == SDLK_UP)m_up = false;
+	if (sym == SDLK_DOWN)m_down = false;
+	if (sym == SDLK_LEFT)m_left = false;
+	if (sym == SDLK_RIGHT)m_right = false;
 }
 
 
@@ -248,53 +265,8 @@ void CMyGame::OnMouseMove(Uint16 x,Uint16 y,Sint16 relx,Sint16 rely,bool bLeft,b
 
 void CMyGame::OnLButtonDown(Uint16 x, Uint16 y)
 {
-	CVector v(x, y);	// destination
-
-	// Place the Pumpkin at the clicked position
-
-	// check if the move is legal
 	
-	if (m_tileLayout[y / 64][x / 64] != ' ')
-		return;	// cannot go into a wall!
-
-	m_pumpkin.SetPosition(v);
-
-	// find the first node: the closest to the NPC
-
-	vector<NODE>::iterator iFirst =
-		min_element(m_graph.begin(), m_graph.end(), [this](NODE& n1, NODE& n2) -> bool {
-		return Distance(n1.pos, m_npc.GetPos()) < Distance(n2.pos, m_npc.GetPos());
-			});
-	int nFirst = iFirst - m_graph.begin();
-
-	// find the last node: the closest to the destination
-	vector<NODE>::iterator iLast =
-		min_element(m_graph.begin(), m_graph.end(), [v](NODE& n1, NODE& n2) -> bool {
-		return Distance(n1.pos, v) < Distance(n2.pos, v);
-			});
-	int nLast = iLast - m_graph.begin();
-
-	// remove the current way points and reset the NPC
-	if (!m_waypoints.empty())
-	{
-		m_waypoints.clear();
-		m_npc.SetVelocity(0, 0);
-	}
-
-
-	// call the path finding algorithm to complete the waypoints
-
-
-	vector<int> path;
-	if (PathFind(m_graph, nFirst, nLast, path))
-	{
-		for (int i : path)
-			m_waypoints.push_back(m_graph[i].pos);
-		m_waypoints.push_back(v);
-	}
 }
-
-
 
 void CMyGame::OnLButtonUp(Uint16 x,Uint16 y)
 {

@@ -22,6 +22,12 @@ class CMyGame : public CGame
 
 	vector<NODE> m_graph;
 
+	bool m_up = false;
+	bool m_down = false;
+	bool m_left = false;
+	bool m_right = false;
+
+
 public:
 	CMyGame(void);
 	~CMyGame(void);
