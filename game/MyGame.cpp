@@ -57,23 +57,23 @@ int Connections[][2] = {
 
 char* CMyGame::m_tileLayout[12] =
 {
-	"XXXXXXXXXXXXXXXXXXXX",
-	"X     XX        XX X",
-	"X         XXXX     X",
-	"X     XX  XXXX  XX X",
-	"XXXXX XX        XX X",
-	"XXXXX XXXXXXXXX XX X",
-	"X     XXXXXXXXX XX X",
-	"X  XXXXX     XX    X",
-	"X XXXXXX XX  XXXXX X",
-	"X XXX    XX  XXXXX X",
+	"XXXXXXX  XXXXXXXX  X",
+	"X     X   X   XX   X",
+	"X  X  XX  X   X    X" ,
+	"X XX            XX X",
+	"X     X         X  X",
+	"X  XX  XXXXXXXXXXX X",
+	"X  XX              X",
+	"X    XXXXXXXX      X",
+	"X    X      X  XX  X",
+	"X    X  XX  X  XX  X",
 	"X                  X",
 	"XXXXXXXXXXXXXXXXXXXX",
 };
 
 CMyGame::CMyGame(void) :
 	m_npc(544, 96, 64, 64, 0),
-	m_pumpkin(-100, -100, "Pumpkin22.png", CColor::White(), 0),
+	m_guard(992, 288, 64, 64, 0),
 	m_background(640, 384, "Area51Background.png", CColor::White(), 0)
 {
 	m_up = false;
@@ -87,6 +87,13 @@ CMyGame::CMyGame(void) :
 	m_npc.LoadAnimation("Ross.png", "walkUp", CSprite::Sheet(4, 2).Row(0).From(2).To(2));
 	m_npc.LoadAnimation("Ross.png", "walkDown", CSprite::Sheet(4, 2).Row(0).From(3).To(3));
 
+	m_guard.LoadAnimation("securityGuard.png", "guardRight", CSprite::Sheet(4, 2).Row(1).From(0).To(1));
+	m_guard.LoadAnimation("securityGuard.png", "guardLeft", CSprite::Sheet(4, 2).Row(1).From(2).To(3));
+	m_guard.LoadAnimation("securityGuard.png", "guardIdle", CSprite::Sheet(4, 2).Row(0).From(0).To(1));
+	m_guard.LoadAnimation("securityGuard.png", "guardUp", CSprite::Sheet(4, 2).Row(0).From(2).To(2));
+	m_guard.LoadAnimation("securityGuard.png", "guardDown", CSprite::Sheet(4, 2).Row(0).From(3).To(3));
+
+	m_guard.SetAnimation("guardIdle", 4);
 	m_npc.SetAnimation("idle", 4);
 
 	// create graph structure - nodes
@@ -181,6 +188,7 @@ void CMyGame::OnUpdate()
 	CVector oldPosition = m_npc.GetPosition();
 
 	m_npc.Update(t);
+	m_guard.Update(t);
 
 	CVector newPosition = m_npc.GetPosition();
 
@@ -204,8 +212,8 @@ void CMyGame::OnDraw(CGraphics* g)
 	m_background.Draw(g);
 	
 	m_tiles.for_each(&CSprite::Draw, g);
-	m_pumpkin.Draw(g);
 	m_npc.Draw(g);
+	m_guard.Draw(g);
 	
 }
 

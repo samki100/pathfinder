@@ -11,8 +11,8 @@ struct NODE
 };
 class CMyGame : public CGame
 {
-	CSprite m_npc;					// Spider
-	CSprite m_pumpkin;				// Pumpkin
+	CSprite m_npc;					// Ross
+	CSprite m_guard;				// Guard
 	CSpriteList m_tiles;			// Tiles
 	CSpriteList m_nodes;			// Nodes
 	CSprite m_background;
@@ -26,6 +26,7 @@ class CMyGame : public CGame
 	bool m_down = false;
 	bool m_left = false;
 	bool m_right = false;
+	bool m_guardMovingDown = true;
 
 	int m_currentAnimation = -1;
 
