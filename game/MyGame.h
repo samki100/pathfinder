@@ -29,6 +29,9 @@ class CMyGame : public CGame
 	bool m_guardMovingDown = true;
 	int m_guardCurrentAnimation = -1;
 	bool m_guardHasSpottedRoss = false;
+	CVector m_guardLastKnownPosition;
+	bool m_guardCanSeeRoss = false;
+	bool m_guardReturnToPatrol = false;
 	int m_currentAnimation = -1;
 
 public:

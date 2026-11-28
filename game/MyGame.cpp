@@ -250,7 +250,13 @@ void CMyGame::OnUpdate()
 	//detction check
 	if (distanceToRoss.Length() <= detectionRange && Dot(rossDirection, guardDirection) > 0.5f && !wallBlocked)
 	{
+		m_guardCanSeeRoss = true;
 		m_guardHasSpottedRoss = true;
+		m_guardLastKnownPosition = m_npc.GetPosition();
+	}
+	else
+	{
+		m_guardCanSeeRoss = false;
 	}
 
 	//guard seek movement 
@@ -290,9 +296,25 @@ void CMyGame::OnUpdate()
 	}
 	else
 	{
-		CVector desiredVelocity = m_npc.GetPosition() - m_guard.GetPosition();
+		//return desitination for patrol guard
+		CVector targetPosition;
+		
+		if (m_guardReturnToPatrol)
+		{
+			targetPosition = CVector(992, 288);
+		}
+		else if (m_guardCanSeeRoss)
+		{
+			targetPosition = m_npc.GetPosition();
+		}
+		else
+		{
+			targetPosition = m_guardLastKnownPosition;
+		}
 
+		CVector desiredVelocity = targetPosition - m_guard.GetPosition();
 		CVector chaseDirection = Normalise(desiredVelocity);
+
 
 		m_guard.SetVelocity(chaseDirection.GetX() * 140, chaseDirection.GetY() * 140);
 
@@ -339,6 +361,23 @@ void CMyGame::OnUpdate()
 
 	m_guard.Update(t);
 
+	//guard return to patrol point if looses sight of ross
+	if (!m_guardCanSeeRoss && !m_guardReturnToPatrol && (m_guard.GetPosition() - m_guardLastKnownPosition).Length() <= 20.0f)
+	{
+		m_guardReturnToPatrol = true;;
+		
+	}
+	if (m_guardReturnToPatrol && (m_guard.GetPosition() - CVector(992, 288)).Length() <= 15.0f)	
+	{
+		m_guardReturnToPatrol = false;
+		m_guardHasSpottedRoss = false;
+		m_guardCanSeeRoss = false;
+		m_guardLastKnownPosition = CVector(0, 0);
+		m_guardMovingDown = true;
+		m_guard.SetVelocity(0, -100);
+	}
+
+	//gameover if guard reaches ross
 	if ((m_guard.GetPosition() - m_npc.GetPosition()).Length() <= catchDistance)
 	{
 		GameOver();
