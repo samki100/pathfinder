@@ -27,7 +27,8 @@ class CMyGame : public CGame
 	bool m_left = false;
 	bool m_right = false;
 	bool m_guardMovingDown = true;
-
+	int m_guardCurrentAnimation = -1;
+	bool m_guardHasSpottedRoss = false;
 	int m_currentAnimation = -1;
 
 public:

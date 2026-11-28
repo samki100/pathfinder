@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "MyGame.h"
 
+bool Intersection(CVector a, CVector b, CVector c, CVector d, float& k1, float& k2);
+bool Intersection(CVector a, CVector b, CVector c, CVector d);
+
 bool PathFind(vector<NODE>& graph, int nStart, int nGoal, vector<int>& path)
 {
 	path.push_back(nStart);
@@ -188,7 +191,7 @@ void CMyGame::OnUpdate()
 	CVector oldPosition = m_npc.GetPosition();
 
 	m_npc.Update(t);
-	m_guard.Update(t);
+
 
 	CVector newPosition = m_npc.GetPosition();
 
@@ -201,6 +204,144 @@ void CMyGame::OnUpdate()
 	if (x < 0 || x >= 1280 || y < 0 || y >= 768 || m_tileLayout[tileY][tileX] != ' ')
 	{
 		m_npc.SetPosition(oldPosition);
+	}
+
+	//ross is within range of guard check
+	float detectionRange = 250.0f;
+	float catchDistance = 40.0f;
+
+	CVector distanceToRoss = m_npc.GetPosition() - m_guard.GetPosition();
+
+	// guard can only spot ross when he's in front of him NOT behind (visability cone)
+	CVector guardDirection = Normalise(m_guard.GetVelocity());
+	CVector rossDirection = Normalise(distanceToRoss);
+
+	bool wallBlocked = false;
+
+	if (distanceToRoss.Length() <= detectionRange && Dot(rossDirection, guardDirection) > 0.5f)
+	{
+		CVector guardPos = m_guard.GetPosition();
+		CVector rossPos = m_npc.GetPosition();
+
+		for (int y = 0; y < 12; y++)
+		{
+			for (int x = 0; x < 20; x++)
+			{
+				if (m_tileLayout[y][x] == 'X')
+				{
+					float left = x * 64.0f;
+					float right = left + 64.0f;
+					float bottom = y * 64.0f;
+					float top = bottom + 64.0f;
+
+					CVector p1(left, bottom);
+					CVector p2(right, bottom);
+					CVector p3(right, top);
+					CVector p4(left, top);
+
+					if (Intersection(guardPos, rossPos, p1, p2) || Intersection(guardPos, rossPos, p2, p3) || Intersection(guardPos, rossPos, p3, p4) || Intersection(guardPos, rossPos, p4, p1))
+					{
+						wallBlocked = true;
+					}
+				}
+			}
+		}
+	}
+	//detction check
+	if (distanceToRoss.Length() <= detectionRange && Dot(rossDirection, guardDirection) > 0.5f && !wallBlocked)
+	{
+		m_guardHasSpottedRoss = true;
+	}
+
+	//guard seek movement 
+	if (!m_guardHasSpottedRoss)
+	{
+		if (m_guardMovingDown)
+		{
+			m_guard.SetVelocity(0, -100);
+			if (m_guardCurrentAnimation != 1)
+			{
+				m_guard.SetAnimation("guardDown", 4);
+				m_guardCurrentAnimation = 1;
+			}
+		}
+		else
+		{
+			m_guard.SetVelocity(0, 100);
+			if (m_guardCurrentAnimation != 2)
+			{
+				m_guard.SetAnimation("guardUp", 4);
+				m_guardCurrentAnimation = 2;
+			}
+		}
+
+		CVector guardPosition = m_guard.GetPosition();
+
+		if (guardPosition.GetY() <= 140)
+		{
+			m_guard.SetPosition(CVector(992, 140));
+			m_guardMovingDown = false;
+		}
+		else if (guardPosition.GetY() >= 288)
+		{
+			m_guard.SetPosition(CVector(992, 288));
+			m_guardMovingDown = true;
+		}
+	}
+	else
+	{
+		CVector desiredVelocity = m_npc.GetPosition() - m_guard.GetPosition();
+
+		CVector chaseDirection = Normalise(desiredVelocity);
+
+		m_guard.SetVelocity(chaseDirection.GetX() * 140, chaseDirection.GetY() * 140);
+
+		//changing guards animation when chasing
+		if (fabs(chaseDirection.GetX()) > fabs(chaseDirection.GetY()))
+		{
+			if (chaseDirection.GetX() > 0)
+			{
+				if (m_guardCurrentAnimation != 3)
+				{
+					m_guard.SetAnimation("guardRight", 4);
+					m_guardCurrentAnimation = 3;
+				}
+			}
+			else
+			{
+				if (m_guardCurrentAnimation != 4)
+				{
+					m_guard.SetAnimation("guardLeft", 4);
+					m_guardCurrentAnimation = 4;
+				}
+			}
+		}
+		else
+		{
+			if (chaseDirection.GetY() > 0)
+			{
+				if (m_guardCurrentAnimation != 2)
+				{
+					m_guard.SetAnimation("guardUp", 4);
+					m_guardCurrentAnimation = 2;
+				}
+			}
+			else
+			{
+				if (m_guardCurrentAnimation != 1)
+				{
+					m_guard.SetAnimation("guardDown", 4);
+					m_guardCurrentAnimation = 1;
+				}
+			}
+		}
+	}
+
+	m_guard.Update(t);
+
+	if ((m_guard.GetPosition() - m_npc.GetPosition()).Length() <= catchDistance)
+	{
+		GameOver();
 	}
 }
 
@@ -342,4 +483,32 @@ void CMyGame::OnMButtonDown(Uint16 x,Uint16 y)
 
 void CMyGame::OnMButtonUp(Uint16 x,Uint16 y)
 {
+}
+
+bool Intersection(CVector a, CVector b, CVector c, CVector d, float &k1, float &k2)
+{
+	CVector v1 = b - a;
+	CVector v2 = d - c;
+	CVector con = c - a;
+
+	float det = v1.m_x * v2.m_y - v1.m_y * v2.m_x;
+
+	if (det != 0)
+	{
+		k1 = (v2.m_y * con.m_x - v2.m_x * con.m_y) / det;
+		k2 = (v1.m_y * con.m_x - v1.m_x * con.m_y) / det;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+bool Intersection(CVector a, CVector b, CVector c, CVector d)
+{
+	float k1, k2;
+
+	if (!Intersection(a, b, c, d, k1, k2))
+		return false;
+	return k1 >= 0 && k1 <= 1.f && k2 >= 0 && k2 <= 1.f;
 }
